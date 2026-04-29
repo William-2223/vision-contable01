@@ -33,29 +33,25 @@ class CatalogoCuentas(ctk.CTkToplevel):
         form = ctk.CTkFrame(contenedor)
         form.pack(pady=16, padx=16, fill="x")
 
-        ctk.CTkLabel(form, text="Datos de la cuenta", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=5, sticky="w", padx=8, pady=(10, 2))
-
         self.codigo = ctk.CTkEntry(form, placeholder_text="Código", width=140)
-        self.codigo.grid(row=1, column=0, padx=8, pady=10)
+        self.codigo.grid(row=0, column=0, padx=8, pady=10)
 
         self.nombre = ctk.CTkEntry(form, placeholder_text="Nombre", width=250)
-        self.nombre.grid(row=1, column=1, padx=8, pady=10)
+        self.nombre.grid(row=0, column=1, padx=8, pady=10)
 
         self.tipo = ctk.CTkComboBox(
             form,
             values=["ACTIVO", "PASIVO", "PATRIMONIO", "INGRESO", "COSTO", "GASTO"],
             width=170
         )
-        self.tipo.grid(row=1, column=2, padx=8, pady=10)
+        self.tipo.grid(row=0, column=2, padx=8, pady=10)
         self.tipo.set("ACTIVO")
 
         self.naturaleza = ctk.CTkComboBox(form, values=["DEUDORA", "ACREEDORA"], width=150)
-        self.naturaleza.grid(row=1, column=3, padx=8, pady=10)
+        self.naturaleza.grid(row=0, column=3, padx=8, pady=10)
         self.naturaleza.set("DEUDORA")
 
-        ctk.CTkButton(form, text="Guardar", width=120, command=self.guardar).grid(row=1, column=4, padx=8, pady=10)
-
-        ctk.CTkLabel(contenedor, text="Listado de cuentas", font=("Arial", 14, "bold")).pack(anchor="w", padx=20, pady=(0, 4))
+        ctk.CTkButton(form, text="Guardar", width=120, command=self.guardar).grid(row=0, column=4, padx=8, pady=10)
 
         tabla_frame = ctk.CTkFrame(contenedor)
         tabla_frame.pack(padx=16, pady=(0, 16), fill="both", expand=True)
@@ -74,13 +70,11 @@ class CatalogoCuentas(ctk.CTkToplevel):
             self.tabla.heading(col, text=col)
             self.tabla.column(col, width=ancho, anchor="center")
 
-        scrollbar_y = ttk.Scrollbar(tabla_frame, orient="vertical", command=self.tabla.yview)
-        scrollbar_x = ttk.Scrollbar(tabla_frame, orient="horizontal", command=self.tabla.xview)
-        self.tabla.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+        scrollbar = ttk.Scrollbar(tabla_frame, orient="vertical", command=self.tabla.yview)
+        self.tabla.configure(yscrollcommand=scrollbar.set)
 
-        self.tabla.pack(side="top", fill="both", expand=True, padx=8, pady=(8, 0))
-        scrollbar_x.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
-        scrollbar_y.pack(side="right", fill="y", padx=(0, 8), pady=8)
+        self.tabla.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=8)
+        scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=8)
 
     def guardar(self):
         codigo = self.codigo.get().strip()
@@ -89,7 +83,7 @@ class CatalogoCuentas(ctk.CTkToplevel):
         naturaleza = self.naturaleza.get().strip()
 
         if not codigo or not nombre:
-            messagebox.showwarning("Datos incompletos", "Ingrese el código y el nombre de la cuenta.")
+            messagebox.showwarning("Aviso", "Ingrese código y nombre")
             return
 
         try:

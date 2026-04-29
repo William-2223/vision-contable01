@@ -28,8 +28,7 @@ class PartidasContables(ctk.CTkToplevel):
         self._construir_ui()
 
     def _construir_ui(self):
-        ctk.CTkLabel(self, text="Partidas contables", font=("Arial", 26, "bold")).pack(pady=(16, 4))
-        ctk.CTkLabel(self, text=f"Usuario: {self.usuario}", font=("Arial", 13)).pack(pady=(0, 10))
+        ctk.CTkLabel(self, text="Partidas contables", font=("Arial", 26, "bold")).pack(pady=(16, 8))
 
         root_frame = ctk.CTkFrame(self, corner_radius=14)
         root_frame.pack(padx=20, pady=(0, 16), fill="both", expand=True)
@@ -37,35 +36,31 @@ class PartidasContables(ctk.CTkToplevel):
         encabezado = ctk.CTkFrame(root_frame)
         encabezado.pack(padx=16, pady=(14, 8), fill="x")
 
-        ctk.CTkLabel(encabezado, text="Encabezado de la partida", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, sticky="w", padx=8, pady=(10, 2))
-
         self.fecha = ctk.CTkEntry(encabezado, placeholder_text="Fecha YYYY-MM-DD", width=160)
         self.fecha.insert(0, str(date.today()))
-        self.fecha.grid(row=1, column=0, padx=8, pady=10)
+        self.fecha.grid(row=0, column=0, padx=8, pady=10)
 
         self.concepto = ctk.CTkEntry(encabezado, placeholder_text="Concepto de la partida", width=780)
-        self.concepto.grid(row=1, column=1, padx=8, pady=10)
+        self.concepto.grid(row=0, column=1, padx=8, pady=10)
 
         detalle = ctk.CTkFrame(root_frame)
         detalle.pack(padx=16, pady=8, fill="x")
 
-        ctk.CTkLabel(detalle, text="Detalle de líneas", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=5, sticky="w", padx=8, pady=(10, 2))
-
         self.cargar_cuentas()
 
         self.combo_cuenta = ctk.CTkComboBox(detalle, values=list(self.cuentas.keys()), width=350)
-        self.combo_cuenta.grid(row=1, column=0, padx=8, pady=10)
+        self.combo_cuenta.grid(row=0, column=0, padx=8, pady=10)
 
         self.debe = ctk.CTkEntry(detalle, placeholder_text="Debe", width=120)
-        self.debe.grid(row=1, column=1, padx=8, pady=10)
+        self.debe.grid(row=0, column=1, padx=8, pady=10)
 
         self.haber = ctk.CTkEntry(detalle, placeholder_text="Haber", width=120)
-        self.haber.grid(row=1, column=2, padx=8, pady=10)
+        self.haber.grid(row=0, column=2, padx=8, pady=10)
 
         self.descripcion = ctk.CTkEntry(detalle, placeholder_text="Descripción", width=300)
-        self.descripcion.grid(row=1, column=3, padx=8, pady=10)
+        self.descripcion.grid(row=0, column=3, padx=8, pady=10)
 
-        ctk.CTkButton(detalle, text="Agregar línea", width=130, command=self.agregar_linea).grid(row=1, column=4, padx=8, pady=10)
+        ctk.CTkButton(detalle, text="Agregar línea", width=130, command=self.agregar_linea).grid(row=0, column=4, padx=8, pady=10)
 
         tabla_frame = ctk.CTkFrame(root_frame)
         tabla_frame.pack(padx=16, pady=8, fill="both", expand=True)
@@ -82,13 +77,11 @@ class PartidasContables(ctk.CTkToplevel):
             self.tabla.heading(col, text=col)
             self.tabla.column(col, width=ancho, anchor="center")
 
-        scrollbar_y = ttk.Scrollbar(tabla_frame, orient="vertical", command=self.tabla.yview)
-        scrollbar_x = ttk.Scrollbar(tabla_frame, orient="horizontal", command=self.tabla.xview)
-        self.tabla.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+        scrollbar = ttk.Scrollbar(tabla_frame, orient="vertical", command=self.tabla.yview)
+        self.tabla.configure(yscrollcommand=scrollbar.set)
 
-        self.tabla.pack(side="top", fill="both", expand=True, padx=8, pady=(8, 0))
-        scrollbar_x.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
-        scrollbar_y.pack(side="right", fill="y", padx=(0, 8), pady=8)
+        self.tabla.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=8)
+        scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=8)
 
         totales = ctk.CTkFrame(root_frame)
         totales.pack(padx=16, pady=8, fill="x")
@@ -141,7 +134,7 @@ class PartidasContables(ctk.CTkToplevel):
             descripcion = self.descripcion.get().strip()
 
             if cuenta_texto not in self.cuentas:
-                messagebox.showerror("Error", "Seleccione una cuenta válida del catálogo")
+                messagebox.showerror("Error", "Seleccione una cuenta válida")
                 return
 
             if debe > 0 and haber > 0:
@@ -149,7 +142,7 @@ class PartidasContables(ctk.CTkToplevel):
                 return
 
             if debe == 0 and haber == 0:
-                messagebox.showerror("Error", "Debe ingresar un valor en Debe o Haber")
+                messagebox.showerror("Error", "Debe ingresar valor en Debe o Haber")
                 return
 
             linea = {
@@ -197,7 +190,7 @@ class PartidasContables(ctk.CTkToplevel):
 
     def guardar_partida(self):
         if self.concepto.get().strip() == "":
-            messagebox.showerror("Datos incompletos", "Ingrese el concepto de la partida")
+            messagebox.showerror("Error", "Ingrese el concepto")
             return
 
         if len(self.detalles) < 2:

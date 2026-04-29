@@ -1,10 +1,12 @@
 import customtkinter as ctk
 from tkinter import messagebox
 import pyodbc
+
 from menu import MenuPrincipal
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
+
 
 def conectar():
     return pyodbc.connect(
@@ -14,52 +16,83 @@ def conectar():
         "Trusted_Connection=yes;"
     )
 
-def login():
-    usuario = entry_user.get()
-    clave = entry_pass.get()
 
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
+class LoginApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
 
-        cursor.execute(
-            """
-            SELECT Nombre, Rol
-            FROM Usuarios
-            WHERE Usuario = ? AND Clave = ? AND Activo = 1
-            """,
-            (usuario, clave)
-        )
+        self.title("Vision Contable")
+        self.geometry("420x360")
+        self.resizable(False, False)
 
-        resultado = cursor.fetchone()
-        conn.close()
+        self._construir_ui()
 
-        if resultado:
+    def _construir_ui(self):
+        container = ctk.CTkFrame(self, corner_radius=14)
+        container.pack(padx=24, pady=24, fill="both", expand=True)
+
+        ctk.CTkLabel(
+            container,
+            text="Vision Contable",
+            font=("Arial", 26, "bold")
+        ).pack(pady=(24, 6))
+
+        ctk.CTkLabel(
+            container,
+            text="Inicio de sesión",
+            font=("Arial", 14)
+        ).pack(pady=(0, 16))
+
+        self.entry_user = ctk.CTkEntry(container, placeholder_text="Usuario", width=280)
+        self.entry_user.pack(pady=8)
+
+        self.entry_pass = ctk.CTkEntry(container, placeholder_text="Contraseña", show="*", width=280)
+        self.entry_pass.pack(pady=8)
+
+        btn_login = ctk.CTkButton(container, text="Ingresar", command=self.login, width=280, height=40)
+        btn_login.pack(pady=(16, 12))
+
+        self.entry_user.focus()
+        self.bind("<Return>", lambda _event: self.login())
+
+    def login(self):
+        usuario = self.entry_user.get().strip()
+        clave = self.entry_pass.get()
+
+        if not usuario or not clave:
+            messagebox.showwarning("Aviso", "Ingrese usuario y contraseña")
+            return
+
+        try:
+            conn = conectar()
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT Nombre, Rol
+                FROM Usuarios
+                WHERE Usuario = ? AND Clave = ? AND Activo = 1
+                """,
+                (usuario, clave)
+            )
+
+            resultado = cursor.fetchone()
+            conn.close()
+
+            if not resultado:
+                messagebox.showerror("Error", "Usuario o contraseña incorrectos")
+                return
+
             nombre, rol = resultado
-            app.destroy()
+            self.destroy()
 
             menu = MenuPrincipal(nombre, rol)
             menu.mainloop()
-        else:
-            messagebox.showerror("Error", "Usuario o contraseña incorrectos")
 
-    except Exception as e:
-        messagebox.showerror("Error", str(e))
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
-app = ctk.CTk()
-app.title("Vision Contable")
-app.geometry("350x300")
 
-titulo = ctk.CTkLabel(app, text="Vision Contable", font=("Arial", 22, "bold"))
-titulo.pack(pady=25)
-
-entry_user = ctk.CTkEntry(app, placeholder_text="Usuario", width=220)
-entry_user.pack(pady=10)
-
-entry_pass = ctk.CTkEntry(app, placeholder_text="Contraseña", show="*", width=220)
-entry_pass.pack(pady=10)
-
-btn_login = ctk.CTkButton(app, text="Ingresar", command=login, width=220)
-btn_login.pack(pady=20)
-
-app.mainloop()
+if __name__ == "__main__":
+    app = LoginApp()
+    app.mainloop()

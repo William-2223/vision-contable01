@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import ttk, messagebox
 import pyodbc
 
+
 def conectar():
     return pyodbc.connect(
         "DRIVER={ODBC Driver 17 for SQL Server};"
@@ -10,45 +11,41 @@ def conectar():
         "Trusted_Connection=yes;"
     )
 
+
 class BalanceGeneral(ctk.CTk):
     def __init__(self):
         super().__init__()
-
         self.title("Balance General")
-        self.geometry("950x600")
-
-        ctk.CTkLabel(
-            self,
-            text="Balance General",
-            font=("Arial", 24, "bold")
-        ).pack(pady=15)
-
-        self.tabla = ttk.Treeview(
-            self,
-            columns=("Tipo", "Codigo", "Cuenta", "Saldo"),
-            show="headings"
-        )
-
-        for col in ("Tipo", "Codigo", "Cuenta", "Saldo"):
-            self.tabla.heading(col, text=col)
-            self.tabla.column(col, width=200)
-
-        self.tabla.pack(fill="both", expand=True, padx=20, pady=20)
-
-        self.lbl_total = ctk.CTkLabel(
-            self,
-            text="",
-            font=("Arial", 17, "bold")
-        )
-        self.lbl_total.pack(pady=10)
-
+        self.geometry("980x680")
+        self.minsize(920, 620)
+        self._construir_ui()
         self.generar()
 
-    def generar(self):
-        try:
-            conn = conectar()
-            cursor = conn.cursor()
+    def _construir_ui(self):
+        ctk.CTkLabel(self, text="Balance General", font=("Arial", 26, "bold")).pack(pady=(16, 4))
+        ctk.CTkLabel(self, text="Resumen de activos, pasivos y patrimonio", font=("Arial", 13)).pack(pady=(0, 10))
+        contenedor = ctk.CTkFrame(self, corner_radius=14)
+        contenedor.pack(padx=20, pady=(0, 16), fill="both", expand=True)
+        tabla_frame = ctk.CTkFrame(contenedor)
+        tabla_frame.pack(padx=16, pady=(14, 8), fill="both", expand=True)
+        self.tabla = ttk.Treeview(tabla_frame, columns=("Tipo", "Codigo", "Cuenta", "Saldo"), show="headings")
+        for col, ancho in {"Tipo": 180, "Codigo": 140, "Cuenta": 420, "Saldo": 180}.items():
+            self.tabla.heading(col, text=col)
+            self.tabla.column(col, width=ancho, anchor="center")
+        sb_y = ttk.Scrollbar(tabla_frame, orient="vertical", command=self.tabla.yview)
+        sb_x = ttk.Scrollbar(tabla_frame, orient="horizontal", command=self.tabla.xview)
+        self.tabla.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
+        self.tabla.pack(side="top", fill="both", expand=True, padx=8, pady=(8, 0))
+        sb_x.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
+        sb_y.pack(side="right", fill="y", padx=(0, 8), pady=8)
+        self.lbl_total = ctk.CTkLabel(contenedor, text="", font=("Arial", 17, "bold"))
+        self.lbl_total.pack(pady=(6, 14))
 
+    def generar(self):
+        for item in self.tabla.get_children():
+            self.tabla.delete(item)
+        try:
+            conn = conectar(); cursor = conn.cursor()
             query = """
                 SELECT 
                     C.Tipo,
@@ -74,44 +71,17 @@ class BalanceGeneral(ctk.CTk):
                     END,
                     C.Codigo
             """
-
             cursor.execute(query)
-
-            total_activo = 0
-            total_pasivo = 0
-            total_patrimonio = 0
-
-            for fila in cursor.fetchall():
-                tipo, codigo, nombre, saldo = fila
+            total_activo = total_pasivo = total_patrimonio = 0
+            for tipo, codigo, nombre, saldo in cursor.fetchall():
                 saldo = float(saldo or 0)
-
-                self.tabla.insert("", "end", values=(
-                    tipo,
-                    codigo,
-                    nombre,
-                    f"{saldo:.2f}"
-                ))
-
-                if tipo == "ACTIVO":
-                    total_activo += saldo
-                elif tipo == "PASIVO":
-                    total_pasivo += saldo
-                elif tipo == "PATRIMONIO":
-                    total_patrimonio += saldo
-
+                self.tabla.insert("", "end", values=(tipo, codigo, nombre, f"{saldo:.2f}"))
+                if tipo == "ACTIVO": total_activo += saldo
+                elif tipo == "PASIVO": total_pasivo += saldo
+                elif tipo == "PATRIMONIO": total_patrimonio += saldo
             diferencia = total_activo - (total_pasivo + total_patrimonio)
-
-            self.lbl_total.configure(
-                text=(
-                    f"Activo: {total_activo:.2f} | "
-                    f"Pasivo: {total_pasivo:.2f} | "
-                    f"Patrimonio: {total_patrimonio:.2f} | "
-                    f"Diferencia: {diferencia:.2f}"
-                )
-            )
-
+            self.lbl_total.configure(text=f"Activo: {total_activo:.2f} | Pasivo: {total_pasivo:.2f} | Patrimonio: {total_patrimonio:.2f} | Diferencia: {diferencia:.2f}")
             conn.close()
-
         except Exception as e:
             messagebox.showerror("Error", str(e))
 

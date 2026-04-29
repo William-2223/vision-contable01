@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 from datetime import date
 import pyodbc
 
+
 def conectar():
     return pyodbc.connect(
         "DRIVER={ODBC Driver 17 for SQL Server};"
@@ -10,6 +11,7 @@ def conectar():
         "DATABASE=VisionContable;"
         "Trusted_Connection=yes;"
     )
+
 
 class PartidasContables(ctk.CTkToplevel):
     def __init__(self, usuario="admin"):
@@ -20,53 +22,69 @@ class PartidasContables(ctk.CTkToplevel):
         self.cuentas = {}
 
         self.title("Partidas contables")
-        self.geometry("1050x620")
+        self.geometry("1160x720")
+        self.minsize(1100, 680)
 
-        ctk.CTkLabel(self, text="Partidas contables", font=("Arial", 24, "bold")).pack(pady=15)
+        self._construir_ui()
 
-        encabezado = ctk.CTkFrame(self)
-        encabezado.pack(padx=20, pady=10, fill="x")
+    def _construir_ui(self):
+        ctk.CTkLabel(self, text="Partidas contables", font=("Arial", 26, "bold")).pack(pady=(16, 8))
+
+        root_frame = ctk.CTkFrame(self, corner_radius=14)
+        root_frame.pack(padx=20, pady=(0, 16), fill="both", expand=True)
+
+        encabezado = ctk.CTkFrame(root_frame)
+        encabezado.pack(padx=16, pady=(14, 8), fill="x")
 
         self.fecha = ctk.CTkEntry(encabezado, placeholder_text="Fecha YYYY-MM-DD", width=160)
         self.fecha.insert(0, str(date.today()))
-        self.fecha.grid(row=0, column=0, padx=10, pady=10)
+        self.fecha.grid(row=0, column=0, padx=8, pady=10)
 
-        self.concepto = ctk.CTkEntry(encabezado, placeholder_text="Concepto de la partida", width=650)
-        self.concepto.grid(row=0, column=1, padx=10, pady=10)
+        self.concepto = ctk.CTkEntry(encabezado, placeholder_text="Concepto de la partida", width=780)
+        self.concepto.grid(row=0, column=1, padx=8, pady=10)
 
-        detalle = ctk.CTkFrame(self)
-        detalle.pack(padx=20, pady=10, fill="x")
+        detalle = ctk.CTkFrame(root_frame)
+        detalle.pack(padx=16, pady=8, fill="x")
 
         self.cargar_cuentas()
 
-        self.combo_cuenta = ctk.CTkComboBox(detalle, values=list(self.cuentas.keys()), width=330)
-        self.combo_cuenta.grid(row=0, column=0, padx=10, pady=10)
+        self.combo_cuenta = ctk.CTkComboBox(detalle, values=list(self.cuentas.keys()), width=350)
+        self.combo_cuenta.grid(row=0, column=0, padx=8, pady=10)
 
         self.debe = ctk.CTkEntry(detalle, placeholder_text="Debe", width=120)
-        self.debe.grid(row=0, column=1, padx=10, pady=10)
+        self.debe.grid(row=0, column=1, padx=8, pady=10)
 
         self.haber = ctk.CTkEntry(detalle, placeholder_text="Haber", width=120)
-        self.haber.grid(row=0, column=2, padx=10, pady=10)
+        self.haber.grid(row=0, column=2, padx=8, pady=10)
 
-        self.descripcion = ctk.CTkEntry(detalle, placeholder_text="Descripción", width=250)
-        self.descripcion.grid(row=0, column=3, padx=10, pady=10)
+        self.descripcion = ctk.CTkEntry(detalle, placeholder_text="Descripción", width=300)
+        self.descripcion.grid(row=0, column=3, padx=8, pady=10)
 
-        ctk.CTkButton(detalle, text="Agregar línea", command=self.agregar_linea).grid(row=0, column=4, padx=10)
+        ctk.CTkButton(detalle, text="Agregar línea", width=130, command=self.agregar_linea).grid(row=0, column=4, padx=8, pady=10)
 
-        self.tabla = ttk.Treeview(
-            self,
-            columns=("Cuenta", "Debe", "Haber", "Descripcion"),
-            show="headings"
-        )
+        tabla_frame = ctk.CTkFrame(root_frame)
+        tabla_frame.pack(padx=16, pady=8, fill="both", expand=True)
 
-        for col in ("Cuenta", "Debe", "Haber", "Descripcion"):
+        self.tabla = ttk.Treeview(tabla_frame, columns=("Cuenta", "Debe", "Haber", "Descripcion"), show="headings")
+
+        columnas = {
+            "Cuenta": 420,
+            "Debe": 130,
+            "Haber": 130,
+            "Descripcion": 380,
+        }
+        for col, ancho in columnas.items():
             self.tabla.heading(col, text=col)
-            self.tabla.column(col, width=220)
+            self.tabla.column(col, width=ancho, anchor="center")
 
-        self.tabla.pack(padx=20, pady=15, fill="both", expand=True)
+        scrollbar = ttk.Scrollbar(tabla_frame, orient="vertical", command=self.tabla.yview)
+        self.tabla.configure(yscrollcommand=scrollbar.set)
 
-        totales = ctk.CTkFrame(self)
-        totales.pack(padx=20, pady=10, fill="x")
+        self.tabla.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=8)
+        scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=8)
+
+        totales = ctk.CTkFrame(root_frame)
+        totales.pack(padx=16, pady=8, fill="x")
 
         self.lbl_debe = ctk.CTkLabel(totales, text="Total debe: 0.00", font=("Arial", 15, "bold"))
         self.lbl_debe.pack(side="left", padx=20)
@@ -77,23 +95,25 @@ class PartidasContables(ctk.CTkToplevel):
         self.lbl_diferencia = ctk.CTkLabel(totales, text="Diferencia: 0.00", font=("Arial", 15, "bold"))
         self.lbl_diferencia.pack(side="left", padx=20)
 
-        botones = ctk.CTkFrame(self)
-        botones.pack(padx=20, pady=10, fill="x")
+        botones = ctk.CTkFrame(root_frame)
+        botones.pack(padx=16, pady=(8, 14), fill="x")
 
-        ctk.CTkButton(botones, text="Guardar partida", command=self.guardar_partida).pack(side="left", padx=10)
-        ctk.CTkButton(botones, text="Eliminar línea seleccionada", command=self.eliminar_linea).pack(side="left", padx=10)
-        ctk.CTkButton(botones, text="Limpiar", command=self.limpiar_todo).pack(side="left", padx=10)
+        ctk.CTkButton(botones, text="Guardar partida", command=self.guardar_partida).pack(side="left", padx=8)
+        ctk.CTkButton(botones, text="Eliminar línea seleccionada", command=self.eliminar_linea).pack(side="left", padx=8)
+        ctk.CTkButton(botones, text="Limpiar", command=self.limpiar_todo).pack(side="left", padx=8)
 
     def cargar_cuentas(self):
         conn = conectar()
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT IdCuenta, Codigo, Nombre
             FROM CatalogoCuentas
             WHERE Activa = 1
             ORDER BY Codigo
-        """)
+            """
+        )
 
         for id_cuenta, codigo, nombre in cursor.fetchall():
             texto = f"{codigo} - {nombre}"
@@ -111,7 +131,7 @@ class PartidasContables(ctk.CTkToplevel):
             cuenta_texto = self.combo_cuenta.get()
             debe = self.convertir_numero(self.debe.get())
             haber = self.convertir_numero(self.haber.get())
-            descripcion = self.descripcion.get()
+            descripcion = self.descripcion.get().strip()
 
             if cuenta_texto not in self.cuentas:
                 messagebox.showerror("Error", "Seleccione una cuenta válida")
@@ -130,17 +150,12 @@ class PartidasContables(ctk.CTkToplevel):
                 "id_cuenta": self.cuentas[cuenta_texto],
                 "debe": debe,
                 "haber": haber,
-                "descripcion": descripcion
+                "descripcion": descripcion,
             }
 
             self.detalles.append(linea)
 
-            self.tabla.insert("", "end", values=(
-                cuenta_texto,
-                f"{debe:.2f}",
-                f"{haber:.2f}",
-                descripcion
-            ))
+            self.tabla.insert("", "end", values=(cuenta_texto, f"{debe:.2f}", f"{haber:.2f}", descripcion))
 
             self.debe.delete(0, "end")
             self.haber.delete(0, "end")
@@ -193,30 +208,32 @@ class PartidasContables(ctk.CTkToplevel):
             conn = conectar()
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO Partidas (Fecha, Concepto, Usuario)
                 OUTPUT INSERTED.IdPartida
                 VALUES (?, ?, ?)
-            """, (
-                self.fecha.get(),
-                self.concepto.get(),
-                self.usuario
-            ))
+                """,
+                (self.fecha.get(), self.concepto.get(), self.usuario),
+            )
 
             id_partida = cursor.fetchone()[0]
 
             for linea in self.detalles:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO PartidaDetalle
                     (IdPartida, IdCuenta, Debe, Haber, Descripcion)
                     VALUES (?, ?, ?, ?, ?)
-                """, (
-                    id_partida,
-                    linea["id_cuenta"],
-                    linea["debe"],
-                    linea["haber"],
-                    linea["descripcion"]
-                ))
+                    """,
+                    (
+                        id_partida,
+                        linea["id_cuenta"],
+                        linea["debe"],
+                        linea["haber"],
+                        linea["descripcion"],
+                    ),
+                )
 
             conn.commit()
             conn.close()

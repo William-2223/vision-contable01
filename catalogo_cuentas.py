@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import ttk, messagebox
 import pyodbc
 
+
 def conectar():
     return pyodbc.connect(
         "DRIVER={ODBC Driver 17 for SQL Server};"
@@ -10,60 +11,98 @@ def conectar():
         "Trusted_Connection=yes;"
     )
 
+
 class CatalogoCuentas(ctk.CTkToplevel):
     def __init__(self):
         super().__init__()
 
         self.title("Catálogo de cuentas")
-        self.geometry("850x500")
+        self.geometry("980x620")
+        self.minsize(920, 560)
 
-        ctk.CTkLabel(self, text="Catálogo de cuentas", font=("Arial", 22, "bold")).pack(pady=15)
-
-        form = ctk.CTkFrame(self)
-        form.pack(pady=10, padx=20, fill="x")
-
-        self.codigo = ctk.CTkEntry(form, placeholder_text="Código")
-        self.codigo.grid(row=0, column=0, padx=10, pady=10)
-
-        self.nombre = ctk.CTkEntry(form, placeholder_text="Nombre", width=250)
-        self.nombre.grid(row=0, column=1, padx=10, pady=10)
-
-        self.tipo = ctk.CTkComboBox(form, values=["ACTIVO", "PASIVO", "PATRIMONIO", "INGRESO", "COSTO", "GASTO"])
-        self.tipo.grid(row=0, column=2, padx=10, pady=10)
-
-        self.naturaleza = ctk.CTkComboBox(form, values=["DEUDORA", "ACREEDORA"])
-        self.naturaleza.grid(row=0, column=3, padx=10, pady=10)
-
-        ctk.CTkButton(form, text="Guardar", command=self.guardar).grid(row=0, column=4, padx=10)
-
-        self.tabla = ttk.Treeview(
-            self,
-            columns=("Codigo", "Nombre", "Tipo", "Naturaleza", "Activa"),
-            show="headings"
-        )
-
-        for col in ("Codigo", "Nombre", "Tipo", "Naturaleza", "Activa"):
-            self.tabla.heading(col, text=col)
-            self.tabla.column(col, width=140)
-
-        self.tabla.pack(padx=20, pady=20, fill="both", expand=True)
-
+        self._construir_ui()
         self.cargar_datos()
 
+    def _construir_ui(self):
+        ctk.CTkLabel(self, text="Catálogo de cuentas", font=("Arial", 26, "bold")).pack(pady=(18, 4))
+        ctk.CTkLabel(self, text="Registro y consulta de cuentas contables", font=("Arial", 13)).pack(pady=(0, 10))
+
+        contenedor = ctk.CTkFrame(self, corner_radius=14)
+        contenedor.pack(pady=(0, 16), padx=20, fill="both", expand=True)
+
+        form = ctk.CTkFrame(contenedor)
+        form.pack(pady=16, padx=16, fill="x")
+
+        ctk.CTkLabel(form, text="Datos de la cuenta", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=5, sticky="w", padx=8, pady=(10, 2))
+
+        self.codigo = ctk.CTkEntry(form, placeholder_text="Código", width=140)
+        self.codigo.grid(row=1, column=0, padx=8, pady=10)
+
+        self.nombre = ctk.CTkEntry(form, placeholder_text="Nombre", width=250)
+        self.nombre.grid(row=1, column=1, padx=8, pady=10)
+
+        self.tipo = ctk.CTkComboBox(
+            form,
+            values=["ACTIVO", "PASIVO", "PATRIMONIO", "INGRESO", "COSTO", "GASTO"],
+            width=170
+        )
+        self.tipo.grid(row=1, column=2, padx=8, pady=10)
+        self.tipo.set("ACTIVO")
+
+        self.naturaleza = ctk.CTkComboBox(form, values=["DEUDORA", "ACREEDORA"], width=150)
+        self.naturaleza.grid(row=1, column=3, padx=8, pady=10)
+        self.naturaleza.set("DEUDORA")
+
+        ctk.CTkButton(form, text="Guardar", width=120, command=self.guardar).grid(row=1, column=4, padx=8, pady=10)
+
+        ctk.CTkLabel(contenedor, text="Listado de cuentas", font=("Arial", 14, "bold")).pack(anchor="w", padx=20, pady=(0, 4))
+
+        tabla_frame = ctk.CTkFrame(contenedor)
+        tabla_frame.pack(padx=16, pady=(0, 16), fill="both", expand=True)
+
+        self.tabla = ttk.Treeview(tabla_frame, columns=("Codigo", "Nombre", "Tipo", "Naturaleza", "Activa"), show="headings")
+
+        columnas = {
+            "Codigo": 120,
+            "Nombre": 300,
+            "Tipo": 140,
+            "Naturaleza": 140,
+            "Activa": 90,
+        }
+
+        for col, ancho in columnas.items():
+            self.tabla.heading(col, text=col)
+            self.tabla.column(col, width=ancho, anchor="center")
+
+        scrollbar_y = ttk.Scrollbar(tabla_frame, orient="vertical", command=self.tabla.yview)
+        scrollbar_x = ttk.Scrollbar(tabla_frame, orient="horizontal", command=self.tabla.xview)
+        self.tabla.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+
+        self.tabla.pack(side="top", fill="both", expand=True, padx=8, pady=(8, 0))
+        scrollbar_x.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
+        scrollbar_y.pack(side="right", fill="y", padx=(0, 8), pady=8)
+
     def guardar(self):
+        codigo = self.codigo.get().strip()
+        nombre = self.nombre.get().strip()
+        tipo = self.tipo.get().strip()
+        naturaleza = self.naturaleza.get().strip()
+
+        if not codigo or not nombre:
+            messagebox.showwarning("Datos incompletos", "Ingrese el código y el nombre de la cuenta.")
+            return
+
         try:
             conn = conectar()
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO CatalogoCuentas (Codigo, Nombre, Tipo, Naturaleza)
                 VALUES (?, ?, ?, ?)
-            """, (
-                self.codigo.get(),
-                self.nombre.get(),
-                self.tipo.get(),
-                self.naturaleza.get()
-            ))
+                """,
+                (codigo, nombre, tipo, naturaleza)
+            )
 
             conn.commit()
             conn.close()
@@ -81,11 +120,13 @@ class CatalogoCuentas(ctk.CTkToplevel):
 
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT Codigo, Nombre, Tipo, Naturaleza, Activa
             FROM CatalogoCuentas
             ORDER BY Codigo
-        """)
+            """
+        )
 
         for fila in cursor.fetchall():
             self.tabla.insert("", "end", values=tuple(fila))
@@ -95,3 +136,4 @@ class CatalogoCuentas(ctk.CTkToplevel):
     def limpiar(self):
         self.codigo.delete(0, "end")
         self.nombre.delete(0, "end")
+        self.codigo.focus()

@@ -24,7 +24,8 @@ class CatalogoCuentas(ctk.CTkToplevel):
         self.cargar_datos()
 
     def _construir_ui(self):
-        ctk.CTkLabel(self, text="Catálogo de cuentas", font=("Arial", 26, "bold")).pack(pady=(18, 8))
+        ctk.CTkLabel(self, text="Catálogo de cuentas", font=("Arial", 26, "bold")).pack(pady=(18, 4))
+        ctk.CTkLabel(self, text="Registro y consulta de cuentas contables", font=("Arial", 13)).pack(pady=(0, 10))
 
         contenedor = ctk.CTkFrame(self, corner_radius=14)
         contenedor.pack(pady=(0, 16), padx=20, fill="both", expand=True)
